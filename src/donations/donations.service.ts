@@ -39,7 +39,7 @@ export class DonationsService {
 
     const p_name = project.p_name;
     const categoryId = project.categoryId || 0;
-    const transferContent = `${categoryId}${p_name}`;
+    const transferContent = `${project.p_name} ${project.categoryId}`;
 
     return {
       bankName: bankConfig.bankName,
@@ -60,9 +60,9 @@ export class DonationsService {
     if (exists) return { success: true, message: 'Already processed' };
 
     // Parse content to find project
-    // Format: (CATEGORYID)(PROJECTNAME) [message]
+    // Format: CATEGORYID PROJECTNAME [message]
     const content = dto.content.trim();
-    const regex = /^(\d+)([a-zA-Z0-9]+)/;
+    const regex = /^([a-zA-Z0-9]+)\s+(\d+)/;
     const match = content.match(regex);
 
     let foundProjectId: number | null = null;
@@ -70,9 +70,9 @@ export class DonationsService {
     let finalMessage: string | null = dto.content;
 
     if (match) {
-      const catId = parseInt(match[1]);
-      const pName = match[2].toUpperCase();
-      const fullCode = match[0];
+      const pName = match[1].toUpperCase();
+      const catId = parseInt(match[2]);
+      const prefix = match[0];
 
       const project = await this.prisma.project.findFirst({
         where: { p_name: pName, categoryId: catId },
@@ -82,7 +82,7 @@ export class DonationsService {
       if (project) {
         foundProjectId = project.id;
 
-        const extractedMsg = content.substring(fullCode.length).trim();
+        const extractedMsg = content.substring(prefix.length).trim();
 
         if (extractedMsg.length > 0) {
           finalMessage = extractedMsg;
@@ -97,7 +97,7 @@ export class DonationsService {
       await tx.donation.create({
         data: {
           amount: dto.transferAmount,
-          donorName: dto.gateway + ' ' + dto.accountNumber,
+          donorName: "Nhà hảo tâm",
 
           message: finalMessage,
 
