@@ -39,7 +39,7 @@ export class DonationsService {
 
     const p_name = project.p_name;
     const categoryId = project.categoryId || 0;
-    const transferContent = `${p_name}-${categoryId}`;
+    const transferContent = `${categoryId}${p_name}`;
 
     return {
       bankName: bankConfig.bankName,
@@ -60,9 +60,9 @@ export class DonationsService {
     if (exists) return { success: true, message: 'Already processed' };
 
     // Parse content to find project
-    // Format: PROJECTNAME_CATEGORYID [message]
+    // Format: (CATEGORYID)(PROJECTNAME) [message]
     const content = dto.content.trim();
-    const regex = /^([a-zA-Z0-9]+)_(\d+)/;
+    const regex = /^(\d+)([a-zA-Z0-9]+)/;
     const match = content.match(regex);
 
     let foundProjectId: number | null = null;
@@ -70,8 +70,8 @@ export class DonationsService {
     let finalMessage: string | null = dto.content;
 
     if (match) {
-      const pName = match[1].toUpperCase();
-      const catId = parseInt(match[2]);
+      const catId = parseInt(match[1]);
+      const pName = match[2].toUpperCase();
       const fullCode = match[0];
 
       const project = await this.prisma.project.findFirst({
