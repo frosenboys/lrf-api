@@ -1,0 +1,252 @@
+// Cấu hình kết nối
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==========================================
+// 1. ADMIN & AUTH
+// ==========================================
+model Admin {
+  id        Int       @id @default(autoincrement())
+  email     String    @unique
+  password  String    
+  fullName  String?
+  role      AdminRole @default(EDITOR)
+  isActive  Boolean   @default(true)
+  
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@map("admins")
+}
+
+enum AdminRole {
+  SUPER_ADMIN
+  EDITOR
+  MODERATOR
+}
+
+// ==========================================
+// 2. SYSTEM SETTINGS
+// ==========================================
+model SystemSetting {
+  id            Int      @id @default(1)
+
+  siteName      String   @default("Little Roses Foundation")
+  options       Json?    @default("{}")
+
+  updatedAt     DateTime @updatedAt
+
+  @@map("system_settings")
+}
+
+// ==========================================
+// 3. CATEGORY (Danh mục)
+// ==========================================
+model Category {
+  id            Int          @id @default(autoincrement())
+  name          String
+  slug          String       @unique
+  description   String?
+  
+  type          CategoryType
+  isActive      Boolean      @default(true)
+
+  projects      Project[]
+  posts         Post[]
+
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@map("categories")
+}
+
+enum CategoryType {
+  POST
+  PROJECT
+}
+
+// ==========================================
+// 4. PROJECTS 
+// ==========================================
+model Project {
+  id            Int      @id @default(autoincrement())
+  
+  // Info
+  title         String
+  slug          String   @unique
+  p_name        String   @unique
+  
+  summary       String?  @db.Text
+  content       String?  @db.Text
+  thumbnailUrl  String?
+  documentUrl   String?
+
+  // Finance
+  targetAmount  Decimal  @default(0) @db.Decimal(15, 2)
+  currentAmount Decimal  @default(0) @db.Decimal(15, 2)
+  
+  // Status
+  startDate     DateTime?
+  endDate       DateTime?
+  isUrgent      Boolean  @default(false)
+  status        ProjectStatus @default(ACTIVE)
+
+  // Relation
+  categoryId    Int?     
+  category      Category? @relation(fields: [categoryId], references: [id])
+  
+  images        ProjectImage[]
+  donations     Donation[]
+  volunteers    Volunteer[]
+  posts         Post[]
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([status])
+  @@map("projects")
+}
+
+enum ProjectStatus {
+  COMING_SOON
+  ACTIVE
+  COMPLETED
+  PAUSED
+}
+
+// Bảng phụ: Ảnh dự án
+model ProjectImage {
+  id          Int      @id @default(autoincrement())
+  imageUrl    String
+  caption     String?
+  isFeatured  Boolean  @default(false)
+
+  // Relation (Phải đổi sang Int để khớp với Project)
+  projectId   Int      
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime @default(now())
+
+  @@map("project_images")
+}
+
+// ==========================================
+// 5. DONATION (Quyên góp)
+// ==========================================
+model Donation {
+  id                   Int            @id @default(autoincrement())
+  amount               Int
+  donorName            String?        
+  message              String?        
+  
+  paymentCode          String         @unique 
+  gatewayTransactionId String?        @unique 
+
+
+  // Relation
+  projectId            Int?           
+  project              Project?       @relation(fields: [projectId], references: [id])
+  
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+
+  @@map("donations")
+}
+
+// ==========================================
+// 6. CONTENT (Tin tức & Tài liệu)
+// ==========================================
+model Post {
+  id            Int      @id @default(autoincrement())
+  
+  title         String
+  slug          String   @unique
+  summary       String?  @db.Text
+  content       String?  @db.Text
+  thumbnailUrl  String?
+  attachmentUrl String?
+  downloadCount Int      @default(0)
+
+  type          PostType @default(NEWS)
+
+  // Relation
+  categoryId    Int?
+  category      Category? @relation(fields: [categoryId], references: [id])
+
+  projectId     Int?     
+  project       Project? @relation(fields: [projectId], references: [id])
+
+  isPublished   Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("posts")
+}
+
+enum PostType {
+  NEWS      
+  STORY     
+  DOCUMENT  
+  ACTIVITY  
+}
+
+// ==========================================
+// 7. USER INTERACTION
+// ==========================================
+
+model Volunteer {
+  id          Int      @id @default(autoincrement())
+  fullName    String
+  email       String
+  phone       String
+  dob         DateTime?
+  address     String?
+  skills      String?   
+
+  status      VolunteerStatus @default(PENDING)
+
+  // Relation (Phải đổi sang Int)
+  projectId   Int?      
+  project     Project?  @relation(fields: [projectId], references: [id])
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("volunteers")
+}
+
+enum VolunteerStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model Contact {
+  id            Int      @id @default(autoincrement())
+  fullName      String
+  email         String
+  phone         String?
+  subject       String?
+  message       String   @db.Text
+
+  status        ContactStatus @default(NEW)
+  replyMessage  String?
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("contacts")
+}
+
+enum ContactStatus {
+  NEW      
+  READ     
+  REPLIED  
+  IGNORED  
+}
