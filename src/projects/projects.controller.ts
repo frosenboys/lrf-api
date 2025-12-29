@@ -4,7 +4,7 @@ import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery, ApiHeaders } from '@nestjs/swagger';
 import { ProjectStatus } from '@prisma/client';
-import { JwtAuthGuard } from 'src/auth/jwt.guard';
+import { AtGuard } from 'src/auth/at.guard';
 import { Roles } from 'src/auth/roles.decorator';
 import { AdminRole } from '@prisma/client';
 import { RolesGuard } from 'src/auth/roles.guard';
@@ -17,7 +17,7 @@ export class ProjectsController {
   // CREATE PROJECT
   @Post()
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(AtGuard, RolesGuard)
   @Roles(AdminRole.MODERATOR)
   @ApiOperation({ summary: 'Create Project (Moderator)' })
   create(@Body() createProjectDto: CreateProjectDto) {
@@ -48,7 +48,7 @@ export class ProjectsController {
   // UPDATE PROJECT
   @Patch(':id')
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(AtGuard, RolesGuard)
   @Roles(AdminRole.MODERATOR)
   @ApiOperation({ summary: 'Update / Hide project (Moderator)' })
   update(@Param('id') id: number, @Body() updateProjectDto: UpdateProjectDto) {
@@ -58,7 +58,7 @@ export class ProjectsController {
   // DELETE PROJECT
   @Delete(':id')
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(AtGuard, RolesGuard)
   @Roles(AdminRole.MODERATOR)
   @ApiOperation({ summary: 'Delete project (Moderator)' })
   remove(@Param('id') id: number) {

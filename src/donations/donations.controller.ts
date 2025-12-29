@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Query, Param } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param } from '@nestjs/common';
 import { DonationsService } from './donations.service';
 import { SePayWebhookDto } from './dto/sepay-donation.dto';
 import { ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';

@@ -4,7 +4,7 @@ import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { ApiTags, ApiOperation, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
 import { PostType } from '@prisma/client';
-import { JwtAuthGuard } from 'src/auth/jwt.guard';
+import { AtGuard } from 'src/auth/at.guard';
 import { Roles } from 'src/auth/roles.decorator';
 import { AdminRole } from '@prisma/client';
 import { RolesGuard } from 'src/auth/roles.guard';
@@ -16,7 +16,7 @@ export class PostsController {
 
   @Post()
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(AtGuard, RolesGuard)
   @Roles(AdminRole.MODERATOR)
   @ApiOperation({ summary: 'Create Post (Moderator)' })
   create(@Body() createPostDto: CreatePostDto) {
@@ -44,7 +44,7 @@ export class PostsController {
 
   @Patch(':id')
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(AtGuard, RolesGuard)
   @Roles(AdminRole.MODERATOR)
   @ApiOperation({ summary: 'Update Post (Moderator)' })
   update(@Param('id') id: number, @Body() updatePostDto: UpdatePostDto) {
@@ -53,7 +53,7 @@ export class PostsController {
 
   @Delete(':id')
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(AtGuard, RolesGuard)
   @Roles(AdminRole.MODERATOR)
   @ApiOperation({ summary: 'Delete Post (Moderator)' })
   remove(@Param('id') id: number) {

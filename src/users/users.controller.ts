@@ -3,7 +3,7 @@ import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-import { JwtAuthGuard } from 'src/auth/jwt.guard';
+import { AtGuard } from 'src/auth/at.guard';
 import { Roles } from 'src/auth/roles.decorator';
 import { AdminRole } from '@prisma/client';
 import { RolesGuard } from 'src/auth/roles.guard';
@@ -11,7 +11,7 @@ import { RolesGuard } from 'src/auth/roles.guard';
 @ApiTags('👥 Users (Admin Management)')
 @Controller('users')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(AtGuard, RolesGuard)
 @Roles(AdminRole.SUPER_ADMIN)
 export class UsersController {
   constructor(private readonly usersService: UsersService) { }

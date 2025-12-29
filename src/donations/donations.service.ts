@@ -37,8 +37,6 @@ export class DonationsService {
     if (!settings || !settings.options) throw new BadRequestException('Lỗi cấu hình bank');
     const bankConfig = settings.options as any;
 
-    const p_name = project.p_name;
-    const categoryId = project.categoryId || 0;
     const transferContent = `${project.p_name} ${project.categoryId}`;
 
     return {

@@ -4,7 +4,7 @@ import { CreateVolunteerDto } from './dto/create-volunteer.dto';
 import { UpdateVolunteerDto } from './dto/update-volunteer.dto';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { VolunteerStatus } from '@prisma/client';
-import { JwtAuthGuard } from 'src/auth/jwt.guard';
+import { AtGuard } from 'src/auth/at.guard';
 import { Roles } from 'src/auth/roles.decorator';
 import { AdminRole } from '@prisma/client';
 import { RolesGuard } from 'src/auth/roles.guard';
@@ -22,7 +22,7 @@ export class VolunteersController {
 
   @Get()
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(AtGuard, RolesGuard)
   @Roles(AdminRole.MODERATOR)
   @ApiOperation({ summary: 'Get list of volunteers (Moderator)' })
   @ApiQuery({ name: 'projectId', required: false })
@@ -36,7 +36,7 @@ export class VolunteersController {
 
   @Patch(':id')
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(AtGuard, RolesGuard)
   @Roles(AdminRole.MODERATOR)
   @ApiOperation({ summary: 'Approve or Reject application (Moderator)' })
   update(@Param('id') id: number, @Body() updateVolunteerDto: UpdateVolunteerDto) {
@@ -45,7 +45,7 @@ export class VolunteersController {
 
   @Delete(':id')
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(AtGuard, RolesGuard)
   @Roles(AdminRole.MODERATOR)
   @ApiOperation({ summary: 'Delete application (Moderator)' })
   remove(@Param('id') id: number) {

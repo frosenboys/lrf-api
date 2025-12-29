@@ -7,7 +7,7 @@ export class LoginDto {
   @IsString()
   email: string;
 
-  @ApiProperty({ example: 'Admin@123', description: 'Mật khẩu của người dùng' })
+  @ApiProperty({ example: '123456', description: 'Mật khẩu của người dùng' })
   @IsString()
   @MinLength(6)
   password: string;

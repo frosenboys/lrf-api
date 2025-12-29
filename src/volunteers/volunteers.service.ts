@@ -23,7 +23,7 @@ export class VolunteersService {
   // GET VOLUNTEERS LIST (Admin)
   async findAll(projectId?: number, status?: VolunteerStatus) {
     const whereCondition = {
-      ...(projectId ? { projectId } : {}),
+      ...(projectId ? { projectId: Number(projectId) } : {}),
       ...(status ? { status } : {}),
     };
 

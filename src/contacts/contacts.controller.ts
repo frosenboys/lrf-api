@@ -4,7 +4,7 @@ import { CreateContactDto } from './dto/create-contact.dto';
 import { UpdateContactDto } from './dto/update-contact.dto';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { ContactStatus } from '@prisma/client';
-import { JwtAuthGuard } from 'src/auth/jwt.guard';
+import { AtGuard } from 'src/auth/at.guard';
 import { Roles } from 'src/auth/roles.decorator';
 import { AdminRole } from '@prisma/client';
 import { RolesGuard } from 'src/auth/roles.guard';
@@ -24,7 +24,7 @@ export class ContactsController {
   // GET ALL CONTACTS (EDITOR)
   @Get()
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(AtGuard, RolesGuard)
   @Roles(AdminRole.EDITOR)
   @ApiOperation({ summary: 'Get list of contacts (Editor)' })
   @ApiQuery({ name: 'status', enum: ContactStatus, required: false })
@@ -35,7 +35,7 @@ export class ContactsController {
   // GET CONTACT DETAILS (EDITOR)
   @Get(':id')
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(AtGuard, RolesGuard)
   @Roles(AdminRole.EDITOR)
   @ApiOperation({ summary: 'Get contact details (Editor)' })
   findOne(@Param('id') id: number) {
@@ -45,7 +45,7 @@ export class ContactsController {
   // UPDATE CONTACT STATUS (EDITOR)
   @Patch(':id')
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(AtGuard, RolesGuard)
   @Roles(AdminRole.EDITOR)
   @ApiOperation({ summary: 'Update contact status (Editor)' })
   update(@Param('id') id: number, @Body() updateContactDto: UpdateContactDto) {
@@ -55,7 +55,7 @@ export class ContactsController {
   // DELETE CONTACT (EDITOR)
   @Delete(':id')
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(AtGuard, RolesGuard)
   @Roles(AdminRole.EDITOR)
   @ApiOperation({ summary: 'Delete contact (Editor)' })
   remove(@Param('id') id: number) {

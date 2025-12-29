@@ -1,18 +1,30 @@
-import { Controller, Post, UseInterceptors, UploadedFile, UseGuards, BadRequestException } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  UseInterceptors,
+  UploadedFile,
+  ParseFilePipe,
+  MaxFileSizeValidator,
+  UseGuards,
+} from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UploadService } from './upload.service';
-import { ApiTags, ApiOperation, ApiConsumes, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
-import { JwtAuthGuard } from 'src/auth/jwt.guard';
+import { ApiTags, ApiConsumes, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
+import { AtGuard } from '../auth/at.guard';
+import { Roles } from '../auth/roles.decorator';
+import { AdminRole } from '@prisma/client';
+import { RolesGuard } from '../auth/roles.guard';
 
-@ApiTags('☁️ Upload')
+@ApiTags('📤 Upload')
 @Controller('upload')
 export class UploadController {
   constructor(private readonly uploadService: UploadService) { }
 
   @Post()
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Upload image to Cloudinary (Admin)' })
+  @UseGuards(AtGuard, RolesGuard)
+  // Moderator
+  @Roles(AdminRole.EDITOR, AdminRole.MODERATOR, AdminRole.SUPER_ADMIN)
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
@@ -21,23 +33,21 @@ export class UploadController {
         file: {
           type: 'string',
           format: 'binary',
-          description: 'File ảnh cần upload (jpg, png...)',
         },
       },
     },
   })
   @UseInterceptors(FileInterceptor('file'))
-  async uploadImage(@UploadedFile() file: Express.Multer.File) {
-    if (!file) {
-      throw new BadRequestException('Không tìm thấy file.');
-    }
-
-    const result = await this.uploadService.uploadFile(file);
-
-    return {
-      url: result.secure_url,
-      publicId: result.public_id,
-      format: result.format,
-    };
+  async uploadFile(
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [
+          new MaxFileSizeValidator({ maxSize: 10485760 }), // 10MB
+        ],
+      }),
+    )
+    file: Express.Multer.File,
+  ) {
+    return this.uploadService.uploadFile(file);
   }
 }
