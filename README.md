@@ -118,24 +118,6 @@ lrf-api/
 └── package.json
 
 ```
-## 📖 API Documentation Summary
+## 📖 API Documentation
 
-### 🔐 Auth
-
-* `POST /auth/login`: Login.
-* `POST /auth/refresh`: Request a new Access Token.
-* `POST /auth/logout`: Logout (Revokes Refresh Token).
-
-### 📤 Upload & Download
-
-* `POST /upload`:
-* Input: `multipart/form-data` (key: `file`)
-* Output: JSON containing `url`, `type` (IMAGE/DOCUMENT).
-
-
-* `GET /upload/download/:filename`: Download document file to local machine.
-
-### 💰 Donations
-
-* `GET /donations/qr/:slug`: Get QR code for a project.
-* `POST /donations/webhook`: Webhook to receive data from SePay.
+👉 **[View Full API Documentation](./endpoints.md)**
