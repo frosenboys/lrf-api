@@ -1,183 +1,141 @@
-# Little Roses Foundation API (Backend)
+# Little Roses Foundation (LRF) - Backend API
 
-The Backend API system for **Little Roses Foundation (LRF)** - A Service Learning Project.
-Built with **NestJS**, **PostgreSQL**, and integrated with **SePay** for automated donation tracking.
+A Backend system for managing charity funds, volunteer projects, and payment gateways, built on the **NestJS** framework and **Prisma** ORM.
 
 ## 🛠 Tech Stack
 
-- **Framework:** NestJS (TypeScript)
-- **Database:** PostgreSQL
-- **ORM:** Prisma
-- **Payment Gateway:** SePay (VietQR Webhook)
-- **Storage:** Cloudinary (Images/Files)
+-   **Framework:** NestJS
+-   **Language:** TypeScript
+-   **Database:** PostgreSQL
+-   **ORM:** Prisma
+-   **Authentication:** JWT (Access Token + Refresh Token)
+-   **Storage (Hybrid):**
+    -   Images ➜ **Cloudinary** (Bandwidth optimization, resizing).
+    -   Documents (PDF/Doc) ➜ **Local Server** (Security, avoids 401/403 errors).
+-   **Payment:** SePay (Automatic bank transfer verification).
+
 ---
 
-## 🚀 Installation & Setup
+## 🚀 Key Features
 
-### 1. Prerequisites
-- Node.js (v18+)
-- PostgreSQL (v14+)
-- npm or yarn
+### 1. Authentication & Authorization (Auth & RBAC)
+-   **Mechanism:** Dual Token (Access Token 15 min, Refresh Token 7 days).
+-   **Roles:**
+    -   `SUPER_ADMIN`: Manage users, system settings.
+    -   `MODERATOR`: Manage projects, posts, volunteers.
+    -   `EDITOR`: Write posts, upload documents.
 
-### 2. Installation
+### 2. File Management (Hybrid Upload System)
+The system automatically classifies files based on MimeType:
+-   **Images (.jpg, .png):** Uploaded to Cloudinary to generate optimized CDN links.
+-   **Documents (.pdf, .docx, .xlsx):** Saved directly to the `uploads/` folder on the server to ensure integrity and support direct downloads.
+-   **Download:** Dedicated endpoint `/upload/download/:filename` forces browser download instead of opening a preview.
+
+### 3. Donations
+-   **SePay Webhook Integration:** Automatically detects bank transactions via transfer content.
+-   **Syntax:** `PROJECT_CODE + CATEGORY_ID` (e.g., `XTXTHG 1`).
+-   **API:** Generates standard VietQR transfer codes.
+
+---
+
+## ⚙️ Installation & Configuration
+
+### 1. Initialize Project
 ```bash
-# Clone the repository
-git clone <your-repo-url>
+# Clone source code
+git clone <repo_url>
 cd lrf-api
 
 # Install dependencies
 npm install
 
-# Configure environment variables
-cp .env.example .env
+```
+
+### 2. Environment Configuration (.env)
+
+Create a `.env` file in the root directory and fill in the following information:
+
+```ini
+# --- SERVER ---
+PORT=3000
+APP_URL="http://localhost:3000"  # Change to real domain when deploying
+
+# --- DATABASE ---
+DATABASE_URL="postgresql://postgres:password@localhost:5432/lrf_db?schema=public"
+
+# --- JWT (MUST BE DIFFERENT) ---
+JWT_ACCESS_SECRET=""
+JWT_REFRESH_SECRET=""
+
+# --- CLOUDINARY (Image Storage) ---
+CLOUDINARY_CLOUD_NAME=
+CLOUDINARY_API_KEY=
+CLOUDINARY_API_SECRET=
+
+# --- SEPAY (Payment) ---
+SEPAY_API_KEY=
 
 ```
 
-### 3. Database Setup
-
-Make sure you have updated `DATABASE_URL` in your `.env` file.
+### 3. Database Migration
 
 ```bash
-# Run migrations (Create tables)
+# Sync Prisma Schema
 npx prisma migrate dev --name init
 
-# Seed database (Create Admin & Sample Data)
+# (Optional) Seed sample data
 npx prisma db seed
 
 ```
 
-### 4. Running the App
+### 4. Run Application
 
 ```bash
-# Development mode
+# Development mode (Watch mode)
 npm run start:dev
 
 # Production mode
+npm run build
 npm run start:prod
 
 ```
 
-* **API Server:** `http://localhost:3000`
-
 ---
 
-## 📚 API Endpoints
-
-### 🔐 Authentication
-
-Manage admin sessions.
-
-| Method | Endpoint | Access | Description |
-| --- | --- | --- | --- |
-| `POST` | `/auth/login` | Public | Login to CMS. Response: JWT Token. |
-| `GET` | `/auth/profile` | **Admin** | Get current logged-in admin info. |
-
-### ⚙️ System Settings
-
-Manage general website configuration (Footer, Contact, Banking Info).
-
-| Method | Endpoint | Access | Description |
-| --- | --- | --- | --- |
-| `GET` | `/settings` | Public | Get public settings (Address, Bank, Socials). |
-| `PATCH` | `/settings` | **Admin** | Update system settings. |
-
-### 📂 Categories
-
-Manage categories for Projects and Posts.
-
-| Method | Endpoint | Access | Description |
-| --- | --- | --- | --- |
-| `GET` | `/categories` | Public | List categories. Query: `?type=PROJECT` or `?type=POST`. |
-| `POST` | `/categories` | **Admin** | Create a new category. |
-| `PATCH` | `/categories/:id` | **Admin** | Update a category. |
-| `DELETE` | `/categories/:id` | **Admin** | Delete a category. |
-
-### 🚀 Projects
-
-Manage charity campaigns and fundraising progress.
-
-| Method | Endpoint | Access | Description |
-| --- | --- | --- | --- |
-| `GET` | `/projects` | Public | List projects (Pagination). Query: `?status=ACTIVE`. |
-| `GET` | `/projects/:slug` | Public | Get project details & image gallery. |
-| `POST` | `/projects` | **Admin** | Create a new project. |
-| `PATCH` | `/projects/:id` | **Admin** | Update project details. |
-| `DELETE` | `/projects/:id` | **Admin** | Delete (or soft delete) a project. |
-
-### 💰 Donations & SePay (Core Feature)
-
-Handle donations and automated payment verification.
-
-| Method | Endpoint | Access | Description |
-| --- | --- | --- | --- |
-| `POST` | `/donations` | Public | Create donation request. Response: `paymentCode` & `qrUrl`. |
-| `POST` | `/donations/sepay-webhook` | **SePay** | **Webhook:** Receive data from SePay -> Verify -> Add funds to Project. |
-| `GET` | `/donations` | Public | Transparency List (Only shows `VERIFIED` donations). |
-| `GET` | `/donations/stats` | Public | Get total donation amount & donor count. |
-| `GET` | `/admin/donations` | **Admin** | Transaction History (View PENDING, CANCELLED). |
-| `PATCH` | `/admin/donations/:id/verify` | **Admin** | Manual Approve (For Cash payments). |
-
-### 📰 Posts (News & Documents)
-
-Manage news, stories, and financial reports.
-
-| Method | Endpoint | Access | Description |
-| --- | --- | --- | --- |
-| `GET` | `/posts` | Public | List posts. Query: `?categoryId=...`. |
-| `GET` | `/posts/:slug` | Public | Get post details. |
-| `POST` | `/posts/:id/download` | Public | **Counter:** Return file URL & increment `downloadCount`. |
-| `POST` | `/posts` | **Admin** | Create a post/document. |
-| `PATCH` | `/posts/:id` | **Admin** | Edit a post. |
-| `DELETE` | `/posts/:id` | **Admin** | Delete a post. |
-
-### 🤝 Volunteers
-
-Manage volunteer registrations.
-
-| Method | Endpoint | Access | Description |
-| --- | --- | --- | --- |
-| `POST` | `/volunteers` | Public | Register as a volunteer for a project. |
-| `GET` | `/volunteers` | **Admin** | View applicants. Query: `?status=PENDING`. |
-| `PATCH` | `/volunteers/:id` | **Admin** | Approve (`APPROVED`) or Reject application. |
-
-### 📩 Contacts
-
-Manage user inquiries.
-
-| Method | Endpoint | Access | Description |
-| --- | --- | --- | --- |
-| `POST` | `/contacts` | Public | Send a contact message. |
-| `GET` | `/contacts` | **Admin** | View all messages. |
-| `PATCH` | `/contacts/:id` | **Admin** | Update status (e.g., REPLIED). |
-
-### ☁️ Upload
-
-| Method | Endpoint | Access | Description |
-| --- | --- | --- | --- |
-| `POST` | `/upload` | **Admin** | Upload file to Cloudinary. Response: `{ url }`. |
-
-### 👤 Users (Internal)
-
-| Method | Endpoint | Access | Description |
-| --- | --- | --- | --- |
-| `GET` | `/users` | **Admin** | List all admins. |
-| `POST` | `/users` | **Super** | Create a new Admin. |
-| `PATCH` | `/users/:id` | **Super** | Disable/Enable account. |
-| `DELETE` | `/users/:id` | **Super** | Delete account. |
-
----
-
-## 🗄 Database Schema (ERD)
-
-The system is built upon the following key models:
-
-1. **SystemSetting:** Singleton configuration for dynamic website info.
-2. **Category:** Shared categories for Projects and Posts.
-3. **Project:** Charity projects (linked to `ProjectImage` for gallery).
-4. **Donation:** Financial transactions (linked to `paymentCode` for SePay tracking).
-5. **Post:** News & Documents (with download tracking).
-6. **Volunteer:** Volunteer applications per project.
-7. **Contact:** User inquiries.
-8. **Admin:** CMS users.
+## 📂 Folder Structure
 
 ```
+lrf-api/
+├── dist/
+├── src/
+│   ├── auth/           # Login, Register, Guards
+│   ├── upload/         # Hybrid Upload Logic
+│   ├── donations/      # SePay Webhook
+│   └── ...
+├── uploads/            # 👈 Folder containing PDF/Doc files (Created at runtime)
+├── prisma/
+├── .env
+└── package.json
+
+```
+## 📖 API Documentation Summary
+
+### 🔐 Auth
+
+* `POST /auth/login`: Login.
+* `POST /auth/refresh`: Request a new Access Token.
+* `POST /auth/logout`: Logout (Revokes Refresh Token).
+
+### 📤 Upload & Download
+
+* `POST /upload`:
+* Input: `multipart/form-data` (key: `file`)
+* Output: JSON containing `url`, `type` (IMAGE/DOCUMENT).
+
+
+* `GET /upload/download/:filename`: Download document file to local machine.
+
+### 💰 Donations
+
+* `GET /donations/qr/:slug`: Get QR code for a project.
+* `POST /donations/webhook`: Webhook to receive data from SePay.
