@@ -1,12 +1,23 @@
 import { v2 as cloudinary } from 'cloudinary';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { InternalServerErrorException } from '@nestjs/common';
 
 export const CloudinaryProvider = {
   provide: 'CLOUDINARY',
-  useFactory: () => {
+  inject: [PrismaService],
+
+  useFactory: async (prisma: PrismaService) => {
+    const setting = await prisma.systemSetting.findUnique({
+      where: { id: 1 },
+    });
+    if (!setting) {
+      throw new InternalServerErrorException('System settings not found');
+    }
+
     return cloudinary.config({
-      cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-      api_key: process.env.CLOUDINARY_API_KEY,
-      api_secret: process.env.CLOUDINARY_API_SECRET,
+      cloud_name: setting.CloudinaryName,
+      api_key: setting.CloudinaryAPIKey,
+      api_secret: setting.CloudinaryAPISecret,
     });
   },
 };

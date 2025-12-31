@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Body, Param } from '@nestjs/common';
 import { DonationsService } from './donations.service';
 import { SePayWebhookDto } from './dto/sepay-donation.dto';
+import { CreateDonationDTO } from './dto/create-donation.dto';
 import { ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
 
 @ApiTags('💰 Donations')
@@ -14,10 +15,10 @@ export class DonationsController {
     return this.donationsService.getBankList();
   }
 
-  @Get('qr/:slug')
-  @ApiOperation({ summary: 'Return Banking Information for Project' })
-  getBankingInfo(@Param('slug') slug: string) {
-    return this.donationsService.getBankingInfo(slug);
+  @Post('create')
+  @ApiOperation({ summary: 'Create Donation Pending' })
+  createDonation(@Body() dto: CreateDonationDTO) {
+    return this.donationsService.createDonation(dto);
   }
 
   @Get('/:slug')

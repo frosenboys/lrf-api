@@ -35,12 +35,12 @@ export class ProjectsService {
     const { images, ...projectData } = createProjectDto;
 
     const slug = this.generateSlug(projectData.title);
-    const p_name = this.generatePName(slug);
+    const p_code = this.generatePName(slug);
     const existing = await this.prisma.project.findFirst({
       where: {
         OR: [
           { slug: slug },
-          { p_name: p_name }
+          { p_code: p_code }
         ]
       }
     });
@@ -53,7 +53,11 @@ export class ProjectsService {
       data: {
         ...projectData,
         slug,
-        p_name,
+        p_code,
+        bankAccount: projectData.bankAccount,
+        bankBin: projectData.bankBin,
+        bankName: projectData.bankName,
+        bankOwner: projectData.bankOwner,
         images: {
           create: images || [],
         },

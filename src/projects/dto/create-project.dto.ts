@@ -60,6 +60,26 @@ export class CreateProjectDto {
   @Min(0)
   targetAmount: number;
 
+  @ApiProperty({ example: 'Vietcombank' })
+  @IsString()
+  @IsNotEmpty()
+  bankName: string;
+
+  @ApiProperty({ example: 'VCB123456' })
+  @IsString()
+  @IsNotEmpty()
+  bankBin: string;
+
+  @ApiProperty({ example: '123456789' })
+  @IsString()
+  @IsNotEmpty()
+  bankAccount: string;
+
+  @ApiProperty({ example: 'Quỹ LRF' })
+  @IsString()
+  @IsNotEmpty()
+  bankOwner: string;
+
   @ApiProperty({ example: '2025-11-01T00:00:00Z', required: false })
   @IsDateString()
   @IsOptional()

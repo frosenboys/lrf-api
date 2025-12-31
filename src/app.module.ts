@@ -9,8 +9,15 @@ import { ContactsModule } from './contacts/contacts.module';
 import { UploadModule } from './upload/upload.module';
 import { UsersModule } from './users/users.module';
 import { DonationsModule } from './donations/donations.module';
+import { EventsModule } from './events/events.module';
+import { BullModule } from '@nestjs/bull';
 
 @Module({
-  imports: [AuthModule, SettingsModule, CategoriesModule, ProjectsModule, PostsModule, VolunteersModule, ContactsModule, UploadModule, UsersModule, DonationsModule],
+  imports: [AuthModule, SettingsModule, CategoriesModule, ProjectsModule, PostsModule, VolunteersModule, ContactsModule, UploadModule, UsersModule, DonationsModule, EventsModule, BullModule.forRoot({
+    redis: {
+      host: 'localhost',
+      port: 6379,
+    },
+  }),],
 })
 export class AppModule { }

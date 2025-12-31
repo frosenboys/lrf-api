@@ -17,23 +17,32 @@ export class SettingsService {
       where: { id: 1 },
     });
 
-    const oldOptions = (currentSettings?.options as object) || {};
+    const oldOptions = (currentSettings?.metaData as object) || {};
 
     const mergedOptions = {
       ...oldOptions,
-      ...(dto.options || {}),
+      ...(dto.metaData || {}),
     };
 
     return this.prisma.systemSetting.upsert({
       where: { id: 1 },
       update: {
+        CloudinaryAPIKey: dto.CloudinaryAPIKey,
+        CloudinaryAPISecret: dto.CloudinaryAPISecret,
+        CloudinaryName: dto.CloudinaryCloudName,
+
+        SepayAPIKey: dto.SepayAPIKey,
         siteName: dto.siteName,
-        options: mergedOptions,
+        metaData: mergedOptions,
       },
       create: {
         id: 1,
+        CloudinaryAPIKey: dto.CloudinaryAPIKey || '',
+        CloudinaryAPISecret: dto.CloudinaryAPISecret || '',
+        CloudinaryName: dto.CloudinaryCloudName || '',
+        SepayAPIKey: dto.SepayAPIKey || '',
         siteName: dto.siteName || 'Little Roses Foundation',
-        options: dto.options || {},
+        metaData: dto.metaData || {},
       },
     });
   }

@@ -8,6 +8,9 @@ CREATE TYPE "CategoryType" AS ENUM ('POST', 'PROJECT');
 CREATE TYPE "ProjectStatus" AS ENUM ('COMING_SOON', 'ACTIVE', 'COMPLETED', 'PAUSED');
 
 -- CreateEnum
+CREATE TYPE "DonationStatus" AS ENUM ('PENDING', 'SUCCESS');
+
+-- CreateEnum
 CREATE TYPE "PostType" AS ENUM ('NEWS', 'STORY', 'DOCUMENT', 'ACTIVITY');
 
 -- CreateEnum
@@ -24,6 +27,7 @@ CREATE TABLE "admins" (
     "fullName" TEXT,
     "role" "AdminRole" NOT NULL DEFAULT 'EDITOR',
     "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "hashedRefreshToken" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -34,7 +38,12 @@ CREATE TABLE "admins" (
 CREATE TABLE "system_settings" (
     "id" INTEGER NOT NULL DEFAULT 1,
     "siteName" TEXT NOT NULL DEFAULT 'Little Roses Foundation',
-    "options" JSONB DEFAULT '{}',
+    "CloudinaryName" TEXT NOT NULL DEFAULT '',
+    "CloudinaryAPIKey" TEXT NOT NULL DEFAULT '',
+    "CloudinaryAPISecret" TEXT NOT NULL DEFAULT '',
+    "SepayAPIKey" TEXT NOT NULL DEFAULT '',
+    "bankQRTemplate" TEXT NOT NULL DEFAULT '',
+    "metaData" JSONB DEFAULT '{}',
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "system_settings_pkey" PRIMARY KEY ("id")
@@ -59,7 +68,7 @@ CREATE TABLE "projects" (
     "id" SERIAL NOT NULL,
     "title" TEXT NOT NULL,
     "slug" TEXT NOT NULL,
-    "p_name" TEXT NOT NULL,
+    "p_code" TEXT NOT NULL,
     "summary" TEXT,
     "content" TEXT,
     "thumbnailUrl" TEXT,
@@ -71,6 +80,10 @@ CREATE TABLE "projects" (
     "isUrgent" BOOLEAN NOT NULL DEFAULT false,
     "status" "ProjectStatus" NOT NULL DEFAULT 'ACTIVE',
     "categoryId" INTEGER,
+    "bankName" TEXT NOT NULL,
+    "bankBin" TEXT NOT NULL,
+    "bankAccount" TEXT NOT NULL,
+    "bankOwner" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -92,11 +105,12 @@ CREATE TABLE "project_images" (
 -- CreateTable
 CREATE TABLE "donations" (
     "id" SERIAL NOT NULL,
-    "amount" INTEGER NOT NULL,
+    "amount" INTEGER NOT NULL DEFAULT 0,
     "donorName" TEXT,
     "message" TEXT,
     "paymentCode" TEXT NOT NULL,
     "gatewayTransactionId" TEXT,
+    "status" "DonationStatus" NOT NULL DEFAULT 'PENDING',
     "projectId" INTEGER,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -167,7 +181,7 @@ CREATE UNIQUE INDEX "categories_slug_key" ON "categories"("slug");
 CREATE UNIQUE INDEX "projects_slug_key" ON "projects"("slug");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "projects_p_name_key" ON "projects"("p_name");
+CREATE UNIQUE INDEX "projects_p_code_key" ON "projects"("p_code");
 
 -- CreateIndex
 CREATE INDEX "projects_status_idx" ON "projects"("status");

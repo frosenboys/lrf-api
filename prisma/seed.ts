@@ -44,14 +44,16 @@ async function main() {
     data: {
       id: 1, // ID cố định là 1
       siteName: 'Little Roses Foundation',
-      options: {
-        // Cấu hình VietQR
-        bankName: 'MB',             // Ngân hàng Quân Đội
-        bankBin: '970422',        // Mã BIN
-        bankAccount: '999988886666', // Số tài khoản
-        bankOwner: 'QUY BONG HONG NHO', // Tên chủ tài khoản
-        qrTemplate: 'compact2',     // Mẫu QR
+      bankQRTemplate: 'compact',
 
+      // Cloudinary Config
+      CloudinaryName: "dnj8b864i",
+      CloudinaryAPIKey: "723859424512621",
+      CloudinaryAPISecret: "uz9kEwsOJF9HSsk9m3TkeUg75dk",
+
+      // SEPAY Config
+      SepayAPIKey: "ASFDCFSCUYKZCQGST6RHWBU310PZ82K6SLYRV13ROJBMCAMD2OJY5ZNXTJIXRGE0",
+      metaData: {
         // Thông tin liên hệ
         hotline: '1900 6868',
         email: 'contact@lrf.org.vn',
@@ -105,7 +107,7 @@ async function main() {
   console.log('📂 Created Categories.');
 
   // ===========================================================
-  // 5. TẠO DỰ ÁN (PROJECTS) - Có p_name
+  // 5. TẠO DỰ ÁN (PROJECTS) - Có p_code
   // ===========================================================
 
   // Dự án 1: Xây trường
@@ -113,13 +115,18 @@ async function main() {
     data: {
       title: 'Xây điểm trường bản Xéo Thâm - Hà Giang',
       slug: 'xay-truong-xeo-tham',
-      p_name: 'XTXTHG', // 👈 Mã viết tắt (Xay Truong Xeo Tham Ha Giang)
+      p_code: 'XTXTHG', // 👈 Mã viết tắt (Xay Truong Xeo Tham Ha Giang)
       summary: 'Dự án xây mới 3 phòng học kiên cố thay thế lớp học tranh tre nứa lá.',
       content: '<p>Nội dung chi tiết dự án...</p>',
       thumbnailUrl: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&w=800&q=80',
 
       targetAmount: 500000000, // 500 triệu
       currentAmount: 125500000,
+
+      bankName: 'Vietcombank',
+      bankBin: '970436',
+      bankAccount: '123456789',
+      bankOwner: 'Quỹ LRF',
 
       status: ProjectStatus.ACTIVE,
       isUrgent: true,
@@ -139,9 +146,14 @@ async function main() {
     data: {
       title: 'Trái tim cho em 2025',
       slug: 'trai-tim-cho-em-2025',
-      p_name: 'TTCE2025', // 👈 Mã viết tắt (Trai Tim Cho Em 2025)
+      p_code: 'TTCE2025', // 👈 Mã viết tắt (Trai Tim Cho Em 2025)
       summary: 'Tài trợ chi phí phẫu thuật tim bẩm sinh cho 50 em nhỏ.',
       thumbnailUrl: 'https://images.unsplash.com/photo-1532938911079-1b06ac7ceec7?auto=format&fit=crop&w=800&q=80',
+
+      bankName: 'Vietcombank',
+      bankBin: '970436',
+      bankAccount: '123456789',
+      bankOwner: 'Quỹ LRF',
 
       targetAmount: 2000000000, // 2 tỷ
       currentAmount: 50000000,
@@ -156,9 +168,14 @@ async function main() {
     data: {
       title: 'Cứu trợ lũ lụt Miền Trung 2024',
       slug: 'cuu-tro-mien-trung-2024',
-      p_name: 'MT2024', // 👈 Mã viết tắt
+      p_code: 'MT2024', // 👈 Mã viết tắt
       summary: 'Hỗ trợ áo phao, lương thực cho bà con vùng rốn lũ.',
       thumbnailUrl: 'https://images.unsplash.com/photo-1547619292-240402b5ae5d?auto=format&fit=crop&w=800&q=80',
+
+      bankName: 'Vietcombank',
+      bankBin: '970436',
+      bankAccount: '123456789',
+      bankOwner: 'Quỹ LRF',
 
       targetAmount: 500000000,
       currentAmount: 550000000, // Đạt 110%

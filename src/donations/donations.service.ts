@@ -2,13 +2,19 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { PrismaService } from 'src/prisma/prisma.service';
 import { HttpService } from '@nestjs/axios';
 import { SePayWebhookDto } from './dto/sepay-donation.dto';
+import { CreateDonationDTO } from './dto/create-donation.dto';
+import { EventsGateway } from 'src/events/events.gateway';
 import { firstValueFrom } from 'rxjs';
+import { InjectQueue } from '@nestjs/bull';
+import type { Queue } from 'bull';
 
 @Injectable()
 export class DonationsService {
   constructor(
     private prisma: PrismaService,
     private httpService: HttpService,
+    @InjectQueue('donation-queue') private donationQueue: Queue,
+    private eventsGateway: EventsGateway
   ) { }
 
   async getBankList() {
@@ -20,100 +26,127 @@ export class DonationsService {
     }
   }
 
-  async getBankingInfo(slug: string) {
+  async createDonation(dto: CreateDonationDTO) {
+    // Check project exists
     const project = await this.prisma.project.findUnique({
-      where: { slug: slug },
+      where: { id: dto.project_id },
       select: {
         id: true,
-        p_name: true,
-        categoryId: true,
+        bankName: true,
+        bankBin: true,
+        bankAccount: true,
+        bankOwner: true,
       },
-
+    });
+    if (!project) throw new NotFoundException('Project not found');
+    // LRF (space) <random 5 chars>
+    const syntax = 'LRF';
+    const transID = Math.random().toString(36).substring(2, 7).toUpperCase();
+    const transactionCode = `${syntax} ${transID}`;
+    const newDonation = await this.prisma.donation.create({
+      data: {
+        amount: 0,
+        donorName: dto.donorName || 'Người quyên góp',
+        projectId: dto.project_id,
+        message: null,
+        paymentCode: transID,
+      },
     });
 
-    if (!project) throw new NotFoundException('Dự án không tồn tại');
+    try {
+      await this.donationQueue.add(
+        'check-timeout',
+        { donationId: newDonation.id },
+        {
+          delay: 5 * 60 * 1000,
+          removeOnComplete: true
+        }
+      );
+    } catch (e) {
+      console.error('Failed to enqueue donation timeout job', e);
+    }
 
-    const settings = await this.prisma.systemSetting.findFirst();
-    if (!settings || !settings.options) throw new BadRequestException('Lỗi cấu hình bank');
-    const bankConfig = settings.options as any;
-
-    const transferContent = `${project.p_name} ${project.categoryId}`;
-
+    // Get banking info from system settings
+    const setting = await this.prisma.systemSetting.findFirst({
+      select: { bankQRTemplate: true },
+    }) || { bankQRTemplate: '' };
+    const vietqrUrl = "https://img.vietqr.io/image/" + `${project.bankBin}-${project.bankAccount}-${setting.bankQRTemplate}.png` +
+      `?addInfo=${encodeURIComponent(transactionCode)}`;
     return {
-      bankName: bankConfig.bankName,
-      bankBin: bankConfig.bankBin,
-      bankQRTemplate: bankConfig.qrTemplate,
-      bankAccount: bankConfig.bankAccount,
-      bankAccountName: bankConfig.bankAccountName,
-      transferContent: transferContent,
+      transactionCode: transactionCode,
+      bankName: project.bankName,
+      bankAccount: project.bankAccount,
+      bankOwner: project.bankOwner,
+      qrUrl: vietqrUrl,
+      projectId: project.id,
     };
   }
+
 
   async processWebhook(dto: SePayWebhookDto) {
     if (dto.transferType !== 'in') return { success: true, message: 'Ignored outbound' };
 
-    const exists = await this.prisma.donation.findUnique({
-      where: { gatewayTransactionId: dto.id.toString() },
-    });
-    if (exists) return { success: true, message: 'Already processed' };
-
     // Parse content to find project
-    // Format: CATEGORYID PROJECTNAME [message]
+    // Format: LRF <RandomCode5Char> (message)
     const content = dto.content.trim();
-    const regex = /^([a-zA-Z0-9]+)\s+(\d+)/;
+    const regex = /LRF\s+([a-zA-Z0-9]{5})\s*(.*)/i;
     const match = content.match(regex);
 
-    let foundProjectId: number | null = null;
+    if (!match) throw new BadRequestException('Invalid content format');
 
-    let finalMessage: string | null = dto.content;
+    const transactionCode = match[1].toUpperCase();
+    const message = match[2] ? match[2].trim() : '';
 
-    if (match) {
-      const pName = match[1].toUpperCase();
-      const catId = parseInt(match[2]);
-      const prefix = match[0];
+    // Find donations by transactionCode
+    const donation = await this.prisma.donation.findFirst({
+      where: { paymentCode: transactionCode },
+      select: { id: true, projectId: true, status: true, gatewayTransactionId: true },
+    });
+    if (!donation || donation.status === 'SUCCESS' || donation.gatewayTransactionId != null) {
+      throw new BadRequestException('Donation with this transaction code not found or already processed');
+    }
 
-      const project = await this.prisma.project.findFirst({
-        where: { p_name: pName, categoryId: catId },
-        select: { id: true }
-      });
+    const projectId = donation.projectId;
+    if (projectId == null) {
+      throw new BadRequestException('Transaction code is not linked to a project');
+    }
 
-      if (project) {
-        foundProjectId = project.id;
-
-        const extractedMsg = content.substring(prefix.length).trim();
-
-        if (extractedMsg.length > 0) {
-          finalMessage = extractedMsg;
-        } else {
-          finalMessage = null;
-        }
-      }
+    const project = await this.prisma.project.findFirst({
+      where: { id: projectId },
+      select: { id: true }
+    });
+    if (!project) {
+      throw new BadRequestException('Project linked to transaction code not found');
     }
 
     // Transaction
     await this.prisma.$transaction(async (tx) => {
-      await tx.donation.create({
+      await tx.donation.update({
+        where: { id: donation.id },
         data: {
           amount: dto.transferAmount,
-          donorName: "Nhà hảo tâm",
 
-          message: finalMessage,
-
-          paymentCode: dto.code || `${dto.id}`,
+          message: message,
           gatewayTransactionId: dto.id.toString(),
-          projectId: foundProjectId,
+          status: 'SUCCESS',
         },
       });
 
-      if (foundProjectId) {
-        await tx.project.update({
-          where: { id: foundProjectId },
-          data: { currentAmount: { increment: dto.transferAmount } }
-        });
-      }
+      await tx.project.update({
+        where: { id: projectId },
+        data: { currentAmount: { increment: dto.transferAmount } }
+      });
     });
 
-    return { success: true, projectId: foundProjectId };
+    this.eventsGateway.broadcastDonation({
+      amount: dto.transferAmount,
+      message: message,
+      donorName: 'Mạnh Thường Quân',
+      projectTitle: projectId,
+      transactionCode: `LRF ${transactionCode}`,
+    });
+
+    return { success: true, projectId: projectId };
   }
 
   async findAll(slug: string) {
