@@ -120,4 +120,4 @@ lrf-api/
 ```
 ## 📖 API Documentation
 
-👉 **[View Full API Documentation](./endpoints.md)**
+👉 **[View Full API Documentation](./EndPoints.md)**
